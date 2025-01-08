@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/")
 // 允许跨域
-@CrossOrigin(origins = "*",allowCredentials = "true")
+//@CrossOrigin(origins = "*",allowCredentials = "true")
 public class MainController {
 
     /**
