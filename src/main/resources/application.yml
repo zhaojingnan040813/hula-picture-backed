@@ -12,6 +12,13 @@ spring:
     url: jdbc:mysql://localhost:3306/hula_picture
     username: root
     password: 909090pppp
+  profiles:
+    active: local
+
+  servlet:
+    multipart:
+      max-file-size: 10MB # 单个文件大小
+
 
 
 
@@ -38,3 +45,6 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.hula.controller
+
+
+
