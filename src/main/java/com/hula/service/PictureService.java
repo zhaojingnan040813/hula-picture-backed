@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.hula.model.Picture;
 import com.hula.model.User;
 import com.hula.model.dto.picture.PictureQueryRequest;
+import com.hula.model.dto.picture.PictureReviewRequest;
 import com.hula.model.dto.picture.PictureUploadRequest;
 import com.hula.model.vo.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,7 +28,7 @@ public interface PictureService extends IService<Picture> {
      * @param loginUser
      * @return
      */
-    PictureVO uploadPicture(MultipartFile multipartFile,
+    PictureVO uploadPicture(Object inputSource,
                             PictureUploadRequest pictureUploadRequest,
                             User loginUser);
 
@@ -39,4 +40,15 @@ public interface PictureService extends IService<Picture> {
     Page<PictureVO> getPictureVOPage(Page<Picture> picturePage, HttpServletRequest request);
 
     void validPicture(Picture picture);
+
+    /**
+     * 图片审核
+     *
+     * @param pictureReviewRequest
+     * @param loginUser
+     */
+    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
+
+
+    void fillReviewParams(Picture picture, User loginUser);
 }
