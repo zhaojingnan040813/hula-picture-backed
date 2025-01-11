@@ -2,28 +2,26 @@ package com.hula.model.dto.picture;
 
 import lombok.Data;
 
-import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class PictureUploadRequest implements Serializable {
+public class PictureUploadByBatchRequest {
 
     /**
-     * 图片 id（用于修改）
+     * 搜索词
      */
-    private Long id;
+    private String searchText;
 
     /**
-     * 文件地址
+     * 抓取数量
      */
-    private String fileUrl;
+    private Integer count = 10;
 
     /**
-     * 图片名称  这个是后面才添加的
+     * 名称前缀
+     * 在Service层设置它与 searchText 拼接
      */
-    private String picName;
-
-    private static final long serialVersionUID = 1L;
+    private String namePrefix;
 
     /**
      * 标签
@@ -34,6 +32,4 @@ public class PictureUploadRequest implements Serializable {
      * 分类
      */
     private String category;
-
 }
-

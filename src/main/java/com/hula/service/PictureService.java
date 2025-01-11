@@ -7,6 +7,7 @@ import com.hula.model.Picture;
 import com.hula.model.User;
 import com.hula.model.dto.picture.PictureQueryRequest;
 import com.hula.model.dto.picture.PictureReviewRequest;
+import com.hula.model.dto.picture.PictureUploadByBatchRequest;
 import com.hula.model.dto.picture.PictureUploadRequest;
 import com.hula.model.vo.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,7 +24,7 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param multipartFile
+     * @param
      * @param pictureUploadRequest
      * @param loginUser
      * @return
@@ -51,4 +52,20 @@ public interface PictureService extends IService<Picture> {
 
 
     void fillReviewParams(Picture picture, User loginUser);
+
+    /**
+     * 批量抓取和创建图片
+     *
+     * @param pictureUploadByBatchRequest
+     * @param loginUser
+     * @return 成功创建的图片数
+     */
+    Integer uploadPictureByBatch(
+            PictureUploadByBatchRequest pictureUploadByBatchRequest,
+            User loginUser
+    );
+
+
+
+
 }

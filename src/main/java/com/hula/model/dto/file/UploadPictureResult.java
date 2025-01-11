@@ -2,6 +2,8 @@ package com.hula.model.dto.file;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 这是一个 dto
  */
@@ -42,5 +44,15 @@ public class UploadPictureResult {
      * 图片格式
      */
     private String picFormat;
+
+    /**
+     * 标签
+     */
+    private List<String> tags;  // 在数据库里面存储的是一个JSON，但是你传给前端的是一个list 方便它转换
+
+    /**
+     * 分类
+     */
+    private String category;
 
 }

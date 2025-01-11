@@ -4,6 +4,8 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -20,6 +22,7 @@ import com.hula.model.User;
 import com.hula.model.dto.file.UploadPictureResult;
 import com.hula.model.dto.picture.PictureQueryRequest;
 import com.hula.model.dto.picture.PictureReviewRequest;
+import com.hula.model.dto.picture.PictureUploadByBatchRequest;
 import com.hula.model.dto.picture.PictureUploadRequest;
 import com.hula.model.enums.PictureReviewStatusEnum;
 import com.hula.model.vo.PictureVO;
@@ -112,6 +115,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 构造要入库的图片信息
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
+
+        picture.setUrl(uploadPictureResult.getUrl());// 这是后增加的方法
         // 支持外层传递图片名称
         String picName = uploadPictureResult.getPicName();
         if (pictureUploadRequest != null && StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
@@ -124,6 +129,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setPicScale(uploadPictureResult.getPicScale());
         picture.setPicFormat(uploadPictureResult.getPicFormat());
         picture.setUserId(loginUser.getId());
+        picture.setCategory(uploadPictureResult.getCategory());
+        String jsonString = JSONUtil.toJsonStr(pictureUploadRequest.getTags());
+        picture.setTags(jsonString);
+
+
         // 补充审核参数
         this.fillReviewParams(picture, loginUser);
         // 操作数据库
@@ -291,6 +301,76 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             picture.setReviewStatus(PictureReviewStatusEnum.REVIEWING.getValue());
         }
     }
+
+    @Override
+    public Integer uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser) {
+        String searchText = pictureUploadByBatchRequest.getSearchText();
+        // 格式化数量
+        Integer count = pictureUploadByBatchRequest.getCount();
+        ThrowUtils.throwIf(count > 30, ErrorCode.PARAMS_ERROR, "最多 30 条");
+        // 要抓取的地址
+        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", searchText);
+        Document document;
+        try {
+            document = Jsoup.connect(fetchUrl).get();
+        } catch (IOException e) {
+            log.error("获取页面失败", e);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取页面失败");
+        }
+        Element div = document.getElementsByClass("dgControl").first();
+        if (ObjUtil.isNull(div)) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取元素失败");
+        }
+        Elements imgElementList = div.select("img.mimg");
+        int uploadCount = 0;
+        for (Element imgElement : imgElementList) {
+            String fileUrl = imgElement.attr("src");
+            if (StrUtil.isBlank(fileUrl)) {
+                log.info("当前链接为空，已跳过: {}", fileUrl);
+                continue;
+            }
+            // 处理图片上传地址，防止出现转义问题
+            int questionMarkIndex = fileUrl.indexOf("?");
+            if (questionMarkIndex > -1) {
+                fileUrl = fileUrl.substring(0, questionMarkIndex);
+
+            }
+            String namePrefix = pictureUploadByBatchRequest.getNamePrefix();
+            if (StrUtil.isBlank(namePrefix)){
+                namePrefix = searchText;// 也就是后面你在接口测试的时候，namePrefix 为空，那么就用searchText 来代替
+            }
+
+
+            // 上传图片
+            PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
+
+            if (StrUtil.isNotBlank(namePrefix)){
+                pictureUploadRequest.setPicName(namePrefix+(uploadCount+1));
+
+            }
+            if (pictureUploadByBatchRequest.getCategory()!=null){
+                pictureUploadRequest.setCategory(pictureUploadByBatchRequest.getCategory());
+            }
+            if (pictureUploadByBatchRequest.getTags()!=null){
+                pictureUploadRequest.setTags(pictureUploadByBatchRequest.getTags());
+            }
+
+
+            try {
+                PictureVO pictureVO = this.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
+                log.info("图片上传成功, id = {}", pictureVO.getId());
+                uploadCount++;
+            } catch (Exception e) {
+                log.error("图片上传失败", e);
+                continue;
+            }
+            if (uploadCount >= count) {
+                break;
+            }
+        }
+        return uploadCount;
+    }
+
 
 }
 
