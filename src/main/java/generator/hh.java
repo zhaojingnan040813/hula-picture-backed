@@ -14,14 +14,16 @@ import java.util.ArrayList;
 
 
 
+import java.util.ArrayList;
+import java.util.List;
+
+
 public class hh {
     public static void main(String[] args) {
-        ArrayList<String> list = new ArrayList<>();
-        list.add("apple");
-        list.add("banana");
-        list.add("orange");
 
-        String jsonString = JSONUtil.toJsonStr(list);
-        System.out.println(jsonString);
+        ArrayList<String> list = new ArrayList<>();
+        List<String> list1 = JSONUtil.toList(list.toString(), String.class);
+
     }
+
 }

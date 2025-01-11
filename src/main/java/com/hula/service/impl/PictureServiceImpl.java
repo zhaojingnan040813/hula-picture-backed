@@ -123,15 +123,24 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             picName = pictureUploadRequest.getPicName();
         }
         picture.setName(picName);
-        picture.setPicSize(uploadPictureResult.getPicSize());
+        picture.setPicSize(uploadPictureResult.getPicSize());//它这个是爬虫获取信息
         picture.setPicWidth(uploadPictureResult.getPicWidth());
         picture.setPicHeight(uploadPictureResult.getPicHeight());
         picture.setPicScale(uploadPictureResult.getPicScale());
         picture.setPicFormat(uploadPictureResult.getPicFormat());
         picture.setUserId(loginUser.getId());
-        picture.setCategory(uploadPictureResult.getCategory());
-        String jsonString = JSONUtil.toJsonStr(pictureUploadRequest.getTags());
-        picture.setTags(jsonString);
+
+        if (pictureUploadRequest.getCategory()!= null){//这个是从前端获取信息，二者不一样
+            picture.setCategory(pictureUploadRequest.getCategory());
+        }
+
+
+        if (pictureUploadRequest.getTags() != null) {
+            List<String> list = JSONUtil.toList(pictureUploadRequest.getTags().toString(), String.class);
+            picture.setTags(list.toString());
+        }
+
+
 
 
         // 补充审核参数

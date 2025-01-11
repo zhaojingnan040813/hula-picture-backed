@@ -214,6 +214,7 @@ public class PictureController {
         return ResultUtils.success(true);
     }
 
+    // TODO
     @GetMapping("/tag_category")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
         PictureTagCategory pictureTagCategory = new PictureTagCategory();
