@@ -86,6 +86,22 @@
             <version>2.0.36</version>
         </dependency>
 
+        <!-- Redis 它是不用引入版本的，因为它是spring-boot-starter开头的起步依赖  -->
+<!-- 后续的时候就可以通过 @Resource 注入       -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- 本地缓存 Caffeine -->
+<!--  https://github.com/ben-manes/caffeine?tab=readme-ov-file      -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.1.8</version>
+        </dependency>
+
+
 
 
 

@@ -1,5 +1,6 @@
 package com.hula.manage;
 
+import cn.hutool.core.io.FileUtil;
 import com.hula.config.CosClientConfig;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.model.COSObject;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 以后要是再做什么项目的话，就直接把这个CosManager拿去用
@@ -67,10 +70,20 @@ public class CosManager {
         PicOperations picOperations = new PicOperations();
         // 1 表示返回原图信息
         picOperations.setIsPicInfo(1);
+        List<PicOperations.Rule> rules = new ArrayList<>(); // 处理规则列表可能有多个，所以我们定义了一个列表
+        // 图片压缩（转成 webp 格式）
+        String webpKey = FileUtil.mainName(key) + ".webp";
+        PicOperations.Rule compressRule = new PicOperations.Rule();
+        compressRule.setRule("imageMogr2/format/webp");
+        compressRule.setBucket(cosClientConfig.getBucket());
+        compressRule.setFileId(webpKey);
+        rules.add(compressRule);
         // 构造处理参数
-        putObjectRequest.setPicOperations(picOperations);
+        picOperations.setRules(rules);//把规则设置成请求
+        putObjectRequest.setPicOperations(picOperations);//再把请求设置给请求类
         return cosClient.putObject(putObjectRequest);
     }
+
 
 
 

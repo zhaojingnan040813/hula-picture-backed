@@ -1,7 +1,10 @@
 package com.hula.controller;
 
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.hula.annotation.AuthCheck;
 import com.hula.common.BaseResponse;
 import com.hula.common.DeleteRequest;
@@ -20,14 +23,19 @@ import com.hula.service.PictureService;
 import com.hula.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Author: 赵景南
@@ -44,6 +52,21 @@ public class PictureController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    /**
+     * 构造一个本地缓存的容器  final 修饰的我们习惯用大写 它的API和HashMap很像
+     */
+    private final Cache<String, String> LOCAL_CACHE = Caffeine.newBuilder()
+            .initialCapacity(1024) // 初始容量
+            .maximumSize(10_000L) // 最大 10000 条
+            // 缓存 5 分钟后移除
+            .expireAfterWrite(Duration.ofMinutes(5)) //写缓存之后多长时间过期
+            .build();// 这里面可以传一个箭头函数，我给它删了，就是一个钩子函数
+
+
     /**
      * 上传图片（可重新上传）
      */
@@ -88,7 +111,7 @@ public class PictureController {
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest,HttpServletRequest request) {
+    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest, HttpServletRequest request) {
         if (pictureUpdateRequest == null || pictureUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -159,7 +182,7 @@ public class PictureController {
     }
 
     /**
-     * 分页获取图片列表（封装类） 这个是给普通用户使用的
+     * 分页获取图片列表（封装类） 这个是给普通用户使用的 这是一个分页查询接口
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest,
@@ -178,6 +201,131 @@ public class PictureController {
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
     }
+
+
+/*    @PostMapping("/list/page/vo/cache")// 这个是只用Redis缓存
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest,
+                                                                      HttpServletRequest request) {
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        // 普通用户默认只能查看已过审的数据
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+
+        // 构建缓存 key  调用 hutool 作为key ，将查询条件转换为 JSON 字符串
+        String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
+        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());// 将查询条件转换为 MD5 哈希值,节省内存，因为MD5的长度是固定的
+        String redisKey = "picture:listPictureVOByPage:" + hashKey;//这是最终存储的 Redis的key，这里的hula是一个前缀，用来区分不同的应用,
+        // 从 Redis 缓存中查询  要是把这个 valueOps改成HashMap就是内存缓存
+        ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();//先拿到一个操作对象
+        String cachedValue = valueOps.get(redisKey);//根据键获取值，键是redisKey，值是下面的JSONUtil.toJsonStr(pictureVOPage);
+        if (cachedValue != null) {
+            // 如果缓存命中，返回结果  每次图片查询可能有一些空的字段，它这里会筛选出来，所以每次查询缓存大小不一样
+            Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);// 将 JSON 字符串转换为 Java 对象的方法
+            return ResultUtils.success(cachedPage);
+        }
+
+        // 查询数据库
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
+                pictureService.getQueryWrapper(pictureQueryRequest));
+        // 获取封装类
+        Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
+
+        // 存入 Redis 缓存
+        String cacheValue = JSONUtil.toJsonStr(pictureVOPage);//因为这里存入Redis直接是pictureVOPage
+        // 5 - 10 分钟随机过期，防止雪崩 它是以TimeUnit.SECONDS为单位的
+        int cacheExpireTime = 300 +  RandomUtil.randomInt(0, 300);// 5分钟就是300秒
+        valueOps.set(redisKey, cacheValue, cacheExpireTime, TimeUnit.SECONDS);
+
+        // 返回结果
+        return ResultUtils.success(pictureVOPage);
+    }*/
+
+/*    @PostMapping("/list/page/vo/cache")// 这是是只用 caffeine 作为缓存，不用Redis
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest,
+                                                                      HttpServletRequest request) {
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        // 普通用户默认只能查看已过审的数据
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+
+        // 构建缓存 key  调用 hutool 作为key ，将查询条件转换为 JSON 字符串
+        String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
+        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());// 将查询条件转换为 MD5 哈希值,节省内存，因为MD5的长度是固定的
+        String cacheKey = "picture:listPictureVOByPage:" + hashKey;//这是最终存储的 Redis的key，这里的hula是一个前缀，用来区分不同的应用,
+        String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
+        if (cachedValue != null) {
+            // 如果缓存命中，返回结果  每次图片查询可能有一些空的字段，它这里会筛选出来，所以每次查询缓存大小不一样
+            Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);// 将 JSON 字符串转换为 Java 对象的方法
+            return ResultUtils.success(cachedPage);
+        }
+        // 查询数据库
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
+                pictureService.getQueryWrapper(pictureQueryRequest));
+        // 获取封装类
+        Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
+        // 存入 Caffeine  缓存
+        String cacheValue = JSONUtil.toJsonStr(pictureVOPage);//因为这里存入Redis直接是pictureVOPage
+       LOCAL_CACHE.put(cacheKey,cacheValue);
+
+        // 返回结果
+        return ResultUtils.success(pictureVOPage);
+    }*/
+
+    /**
+     * 分页获取图片列表（封装类）  这里用到了二级缓存 Redis和 Caffeine
+     */
+    @PostMapping("/list/page/vo/cache")
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest,
+                                                                      HttpServletRequest request) {
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        // 普通用户默认只能查看已过审的数据
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+
+        // 构建缓存 key  调用 hutool 作为key ，将查询条件转换为 JSON 字符串 ，cachedKey更加通用一些
+        String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
+        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());// 将查询条件转换为 MD5 哈希值,节省内存，因为MD5的长度是固定的
+        String cacheKey = String.format("picture:listPictureVOByPage:%s",hashKey);
+        //1.先从Caffeine缓存中查询
+        String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
+        if (cachedValue != null) {
+            // 如果缓存命中，返回结果  每次图片查询可能有一些空的字段，它这里会筛选出来，所以每次查询缓存大小不一样
+            Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);// 将 JSON 字符串转换为 Java 对象的方法
+            return ResultUtils.success(cachedPage);
+        }
+        // 从 Redis 缓存中查询  要是把这个 valueOps改成HashMap就是内存缓存
+        ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();//先拿到一个操作对象
+         cachedValue = valueOps.get(cacheKey);//  前面 caffeine没有查询到，cachedValue就是空的
+        if (cachedValue != null) {
+            // 如果缓存命中，返回结果  每次图片查询可能有一些空的字段，它这里会筛选出来，所以每次查询缓存大小不一样
+            LOCAL_CACHE.put(cacheKey,cachedValue);
+            Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);// 将 JSON 字符串转换为 Java 对象的方法
+            return ResultUtils.success(cachedPage);
+        }
+
+        // 查询数据库
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
+                pictureService.getQueryWrapper(pictureQueryRequest));
+        // 获取封装类
+        Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
+
+        // 4.更新缓存
+        cachedValue = JSONUtil.toJsonStr(pictureVOPage);// 用JSON存储缓存的好处
+        LOCAL_CACHE.put(cacheKey,cachedValue);
+        // 5 - 10 分钟随机过期，防止雪崩 它是以TimeUnit.SECONDS为单位的
+        int cacheExpireTime = 300 + RandomUtil.randomInt(0, 300);// 5分钟就是300秒
+        valueOps.set(cacheKey, cachedValue, cacheExpireTime, TimeUnit.SECONDS);
+
+        // 返回结果
+        return ResultUtils.success(pictureVOPage);
+    }
+
 
     /**
      * 编辑图片（给用户使用）
@@ -262,7 +410,6 @@ public class PictureController {
         int uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
         return ResultUtils.success(uploadCount);
     }
-
 
 
 }
