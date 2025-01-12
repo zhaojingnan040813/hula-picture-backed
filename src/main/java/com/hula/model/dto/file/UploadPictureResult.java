@@ -55,4 +55,9 @@ public class UploadPictureResult {
      */
     private String category;
 
+    /**
+     * 缩略图 url
+     */
+    private String thumbnailUrl;
+
 }
