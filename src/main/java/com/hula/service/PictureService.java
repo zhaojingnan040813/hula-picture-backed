@@ -10,6 +10,7 @@ import com.hula.model.dto.picture.PictureReviewRequest;
 import com.hula.model.dto.picture.PictureUploadByBatchRequest;
 import com.hula.model.dto.picture.PictureUploadRequest;
 import com.hula.model.vo.PictureVO;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
@@ -66,6 +67,6 @@ public interface PictureService extends IService<Picture> {
     );
 
 
-
-
+    @Async
+    void clearPictureFile(Picture oldPicture);
 }
