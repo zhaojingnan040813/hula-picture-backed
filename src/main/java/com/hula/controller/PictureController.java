@@ -189,6 +189,10 @@ public class PictureController {
                                                              HttpServletRequest request) {
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
+        List<String> tags = pictureQueryRequest.getTags();// 应该是这里没有得到
+//        System.out.println(Arrays.toString(tags.toArray()));
+
+
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
 
@@ -197,7 +201,7 @@ public class PictureController {
 
         // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
-                pictureService.getQueryWrapper(pictureQueryRequest));
+                pictureService.getQueryWrapper(pictureQueryRequest)); //这里是把tags传进来做为查询条件了的
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
     }

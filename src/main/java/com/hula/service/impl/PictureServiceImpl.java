@@ -143,7 +143,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
         if (pictureUploadRequest.getTags() != null) {
             List<String> list = JSONUtil.toList(pictureUploadRequest.getTags().toString(), String.class);
-            picture.setTags(list.toString());
+//            picture.setTags(list);
+            picture.setTags(JSONUtil.toJsonStr(list));
         }
 
 
@@ -233,6 +234,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Integer reviewStatus = pictureQueryRequest.getReviewStatus();
         String reviewMessage = pictureQueryRequest.getReviewMessage();
         Long reviewerId = pictureQueryRequest.getReviewerId();
+//        Long spaceId = pictureQueryRequest.getSpaceId();
+//        boolean nullSpaceId = pictureQueryRequest.isNullSpaceId();
         String sortField = pictureQueryRequest.getSortField();
         String sortOrder = pictureQueryRequest.getSortOrder();
         // 从多字段中搜索
@@ -247,6 +250,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
+//        queryWrapper.eq(ObjUtil.isNotEmpty(spaceId), "spaceId", spaceId);
+//        queryWrapper.isNull(nullSpaceId, "spaceId");
         queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
         queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
         queryWrapper.like(StrUtil.isNotBlank(picFormat), "picFormat", picFormat);

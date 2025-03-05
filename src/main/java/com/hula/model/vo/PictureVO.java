@@ -114,7 +114,7 @@ public class PictureVO implements Serializable {
         }
         Picture picture = new Picture();
         BeanUtils.copyProperties(pictureVO, picture);
-        // 类型不同，需要手动转换，就不能借助工具类了
+        // 类型不同，需要转换
         picture.setTags(JSONUtil.toJsonStr(pictureVO.getTags()));
         return picture;
     }

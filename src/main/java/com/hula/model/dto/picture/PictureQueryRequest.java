@@ -3,6 +3,7 @@ package com.hula.model.dto.picture;
 import com.hula.common.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
 import java.io.Serializable;
 import java.util.List;
@@ -34,6 +35,7 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
     /**
      * 标签
      */
+    @Getter
     private List<String> tags;
 
     /**

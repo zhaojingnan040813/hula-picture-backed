@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
+
 import lombok.Data;
 
 /**
@@ -48,7 +50,7 @@ public class Picture implements Serializable {
     /**
      * 标签（JSON 数组）
      */
-    private String tags;
+    private String tags; // 注意这里要用String 类型好写入到数据库里面
 
     /**
      * 图片体积
