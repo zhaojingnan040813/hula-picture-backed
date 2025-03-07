@@ -5,10 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hula.model.Picture;
 import com.hula.model.User;
-import com.hula.model.dto.picture.PictureQueryRequest;
-import com.hula.model.dto.picture.PictureReviewRequest;
-import com.hula.model.dto.picture.PictureUploadByBatchRequest;
-import com.hula.model.dto.picture.PictureUploadRequest;
+import com.hula.model.dto.picture.*;
 import com.hula.model.vo.PictureVO;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
@@ -69,4 +66,16 @@ public interface PictureService extends IService<Picture> {
 
     @Async
     void clearPictureFile(Picture oldPicture);
+
+    /**
+     * 校验空间图片的权限
+     * @param loginUser
+     * @param picture
+     */
+    void checkPictureAuth(User loginUser,Picture picture);
+
+
+    void deletePicture(long pictureId, User loginUser);
+
+    void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
 }

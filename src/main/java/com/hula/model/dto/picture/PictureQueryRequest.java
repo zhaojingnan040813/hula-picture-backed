@@ -90,4 +90,16 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
      */
     private Long reviewerId;
 
+    /**
+     * 空间 id
+     */
+    private Long spaceId;
+//    注意，单用一个 spaceId作为查询条件是不行的，因为它为null的话，就不会把它拼接到SQL里面，这样就是把所有空间的图片都给查询出来了
+
+    /**
+     * 是否只查询spaceId为null的数据
+     */
+    private boolean nullSpaceId;
+
+
 }
