@@ -286,6 +286,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         boolean nullSpaceId = pictureQueryRequest.isNullSpaceId();
         String sortField = pictureQueryRequest.getSortField();
         String sortOrder = pictureQueryRequest.getSortOrder();
+        Date startEditTime = pictureQueryRequest.getStartEditTime();
+        Date endEditTime = pictureQueryRequest.getEndEditTime();
+
         // 从多字段中搜索
         if (StrUtil.isNotBlank(searchText)) {
             // 需要拼接查询条件
@@ -312,6 +315,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.eq(ObjUtil.isNotEmpty(picScale), "picScale", picScale);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId), "reviewerId", reviewerId);
+        // 时间范围
+        queryWrapper.ge(ObjUtil.isNotEmpty(startEditTime), "editTime", startEditTime);
+        queryWrapper.lt(ObjUtil.isNotEmpty(endEditTime), "editTime", endEditTime);
+
         // JSON 数组查询
 //        if (CollUtil.isNotEmpty(tags)) {
 //            /* and (tag like "%\"Java\"%" and like "%\"Python\"%") */
@@ -509,7 +516,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             if (spaceId != null) {
                 boolean update = spaceService.lambdaUpdate()
                         .eq(Space::getId, spaceId)
-                        .setSql("totalSize=totalSize" + oldPicture.getPicSize())
+//                老子这里的SQL 少写了一个减号，导致出bug了，我服了
+                        .setSql("totalSize=totalSize -" + oldPicture.getPicSize())
                         .setSql("totalCount=totalCount+1")
                         .update();
                 ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "额度更新失败");

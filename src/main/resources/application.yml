@@ -21,10 +21,10 @@ spring:
   # Redis 配置
   redis:
     database: 1 # Redis 数据库索引（默认为 0） 推荐是一个项目使用一个Redis数据库 我不理解我的IDEA为什么查询不到 难道是我没有做数据卷挂载的原因吗
-    host: 36.140.162.53
+    host: 127.0.0.1
     port: 6379
     timeout: 5000
-    password: 123456
+#    password: 123456
   session:
     store-type: redis
     timeout: 2592000
