@@ -32,10 +32,7 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
      */
     private String category;
 
-    /**
-     * 标签
-     */
-    @Getter
+
     private List<String> tags;
 
     /**
