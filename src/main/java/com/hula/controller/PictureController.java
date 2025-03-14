@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.hula.annotation.AuthCheck;
+import com.hula.api.imagesearch.ImageSearchApiFacade;
+import com.hula.api.imagesearch.model.ImageSearchResult;
 import com.hula.common.BaseResponse;
 import com.hula.common.DeleteRequest;
 import com.hula.common.ResultUtils;
@@ -400,5 +402,26 @@ public class PictureController {
         return ResultUtils.success(uploadCount);
     }
 
+
+    /**
+     * 以图搜图
+     */
+    @PostMapping("/search/picture")
+    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
+        ThrowUtils.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAMS_ERROR);
+        // 要把图片ID转化成图片URL
+        Long pictureId = searchPictureByPictureRequest.getPictureId();
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        Picture oldPicture = pictureService.getById(pictureId);// 根据图片ID 查询到图片对象
+
+        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);// 也就是根据图片ID找不到这个图片
+
+        String url = oldPicture.getUrl()+"?imageMogr2/format/png";
+        List resultList = ImageSearchApiFacade.searchImage(url);
+
+        System.out.println(oldPicture.getUrl());
+//        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(oldPicture.getUrl());
+        return ResultUtils.success(resultList);
+    }
 
 }

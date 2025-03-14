@@ -12,9 +12,9 @@ spring:
   # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://36.140.162.53:3306/hula_picture
-    username: hula_picture_user
-    password: 123456
+    url: jdbc:mysql://127.0.0.1:3306/hula_picture
+    username: root
+    password: 909090pppp
   profiles:
     active: local
 
