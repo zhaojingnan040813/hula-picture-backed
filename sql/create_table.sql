@@ -99,6 +99,59 @@ ALTER TABLE picture
     ADD COLUMN picColor varchar(16) null comment '图片主色调';
 
 
+-- 私信会话表
+CREATE TABLE IF NOT EXISTS message_session (
+    id             BIGINT AUTO_INCREMENT COMMENT 'id' PRIMARY KEY,
+    sessionKey     VARCHAR(64)                           NOT NULL COMMENT '会话唯一标识（两个用户ID拼接）',
+    fromUserId     BIGINT                                NOT NULL COMMENT '发起会话的用户ID',
+    toUserId       BIGINT                                NOT NULL COMMENT '接收会话的用户ID',
+    lastMessageId  BIGINT                                NULL COMMENT '最后一条消息ID',
+    unreadCount    INT           DEFAULT 0               NOT NULL COMMENT '未读消息数',
+    lastActiveTime DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '最后活跃时间',
+    createTime     DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
+    updateTime     DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    isDelete       TINYINT      DEFAULT 0                 NOT NULL COMMENT '是否删除',
+    UNIQUE KEY uk_sessionKey (sessionKey),
+    INDEX idx_fromUserId (fromUserId),
+    INDEX idx_toUserId (toUserId),
+    INDEX idx_lastActiveTime (lastActiveTime)
+) COMMENT '私信会话' COLLATE = utf8mb4_unicode_ci;
+
+-- 私信内容表
+CREATE TABLE IF NOT EXISTS message_content (
+    id           BIGINT AUTO_INCREMENT COMMENT 'id' PRIMARY KEY,
+    sessionId    BIGINT                                NOT NULL COMMENT '会话ID',
+    senderId     BIGINT                                NOT NULL COMMENT '发送者ID',
+    receiverId   BIGINT                                NOT NULL COMMENT '接收者ID',
+    content      TEXT                                  NOT NULL COMMENT '消息内容',
+    contentType  TINYINT      DEFAULT 0                NOT NULL COMMENT '消息类型：0-文本，1-图片，2-文件',
+    mediaUrl     VARCHAR(512)                          NULL COMMENT '媒体URL，如图片或文件链接',
+    isRead       TINYINT      DEFAULT 0                NOT NULL COMMENT '是否已读：0-未读，1-已读',
+    readTime     DATETIME                              NULL COMMENT '阅读时间',
+    createTime   DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
+    updateTime   DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    isDelete     TINYINT      DEFAULT 0                 NOT NULL COMMENT '是否删除',
+    INDEX idx_sessionId (sessionId),
+    INDEX idx_senderId (senderId),
+    INDEX idx_receiverId (receiverId),
+    INDEX idx_createTime (createTime)
+) COMMENT '私信内容' COLLATE = utf8mb4_unicode_ci;
+
+-- 用户关系表（用于好友、黑名单等功能扩展）
+CREATE TABLE IF NOT EXISTS user_relation (
+    id           BIGINT AUTO_INCREMENT COMMENT 'id' PRIMARY KEY,
+    userId       BIGINT                                NOT NULL COMMENT '用户ID',
+    relatedUserId BIGINT                               NOT NULL COMMENT '关联用户ID',
+    relationType TINYINT      DEFAULT 0                NOT NULL COMMENT '关系类型：0-好友，1-黑名单',
+    createTime   DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
+    updateTime   DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    isDelete     TINYINT      DEFAULT 0                 NOT NULL COMMENT '是否删除',
+    UNIQUE KEY uk_user_relation (userId, relatedUserId, relationType),
+    INDEX idx_userId (userId),
+    INDEX idx_relatedUserId (relatedUserId)
+) COMMENT '用户关系' COLLATE = utf8mb4_unicode_ci;
+
+
 
 
 
