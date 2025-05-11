@@ -25,6 +25,7 @@ public enum SpaceLevelEnum {
      * @param maxSize 最大图片总大小
      * @param maxCount 最大图片总数量
      */
+    // 构造方法
     SpaceLevelEnum(String text, int value, long maxCount, long maxSize) {
         this.text = text;
         this.value = value;
@@ -35,6 +36,7 @@ public enum SpaceLevelEnum {
     /**
      * 根据 value 获取枚举
      */
+    // 工具方法
     public static SpaceLevelEnum getEnumByValue(Integer value) {
         if (ObjUtil.isEmpty(value)) {
             return null;
