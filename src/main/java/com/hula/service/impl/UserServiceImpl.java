@@ -38,7 +38,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService {
 
     @Override
-    public long userRegister(String userAccount, String userPassword, String checkPassword) {
+    public long userRegister(String userAccount, String userPassword, String checkPassword, String userRole) {
         // 1. 校验
         if (StrUtil.hasBlank(userAccount, userPassword, checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
@@ -51,6 +51,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         if (!userPassword.equals(checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
+        }
+        // 校验角色是否合法
+        if (StrUtil.isBlank(userRole)) {
+            userRole = UserRoleEnum.USER.getValue(); // 默认为普通用户
+        } else if (!UserRoleEnum.USER.getValue().equals(userRole) && !UserRoleEnum.ADMIN.getValue().equals(userRole)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "角色不合法");
         }
         // 2. 检查是否重复
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
@@ -66,7 +72,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setUserAccount(userAccount);
         user.setUserPassword(encryptPassword);
         user.setUserName("无名");
-        user.setUserRole(UserRoleEnum.USER.getValue());
+        user.setUserRole(userRole);
         boolean saveResult = this.save(user);// 就是看有没有注册过
         if (!saveResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败，数据库错误");
