@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAspectJAutoProxy(exposeProxy = true)
 @EnableAsync
 public class HulaPictureBackedApplication {
-
+//加了一个注解
     public static void main(String[] args) {
         SpringApplication.run(HulaPictureBackedApplication.class, args);
     }
